@@ -1,1 +1,14 @@
-peers = {}
+peers = {
+   "pi2":{
+      "ip":"10.129.207.40",
+      "port":5000,
+      "last_seen":1762201528,
+      "status":"active"
+   },
+   "pi3":{
+      "ip":"10.129.202.9",
+      "port":5000,
+      "last_seen":1762201528,
+      "status":"active"
+   }
+}

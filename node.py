@@ -11,7 +11,7 @@ from typing import Tuple, Dict, Any
 
 # ---------- Global Configuration ----------
 PORT = 5000
-BROADCAST_IP = "192.168.0.255"  # change to your subnet's broadcast if needed
+BROADCAST_IP = "10.129.255.255"  # change to your subnet's broadcast if needed
 SYNC_INTERVAL = 5          # seconds
 PING_INTERVAL = 15         # seconds
 PING_TIMEOUT = 3           # seconds
