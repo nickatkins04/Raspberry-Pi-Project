@@ -6,6 +6,7 @@ import time
 import zlib
 import logging
 import os
+import json
 from typing import Tuple, Dict, Any
 
 # ---------- Global Configuration ----------
@@ -20,22 +21,22 @@ MODEL_VER = 0
 
 def _setup_logging(node_id: str):
     os.makedirs("logs", exist_ok=True)
+
+    # Main logger (events)
     logger = logging.getLogger(node_id)
     logger.setLevel(logging.INFO)
 
     fh = logging.FileHandler(f"logs/{node_id}.log", encoding="utf-8")
     fh.setLevel(logging.INFO)
-
+    fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] | %(message)s"))  # file
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
-
-    fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-    fh.setFormatter(fmt)
-    ch.setFormatter(fmt)
+    ch.setFormatter(logging.Formatter("[%(levelname)s] | %(message)s"))  # console
 
     logger.handlers.clear()
     logger.addHandler(fh)
     logger.addHandler(ch)
+
     return logger
 
 def _now_ms() -> int:
@@ -46,11 +47,6 @@ def _crc32_hex(s: str) -> str:
 
 
 class PeerNode:
-    """
-    UDP overlay node implementing broadcast discovery (PEER_SYNC)
-    and heartbeat (PING/PONG) with basic metrics.
-    """
-
     def __init__(self, node_id: str):
         self.id = node_id
         self.logger = _setup_logging(node_id)
@@ -62,7 +58,6 @@ class PeerNode:
         self.running = False
         self.lock = threading.Lock()
 
-        # metrics
         self.sent = 0
         self.recv = 0
         self.rtts_ms = []
@@ -186,7 +181,7 @@ class PeerNode:
                     "last_seen": now_s,
                     "status": "active",
                 }
-                self.logger.info(f"SYNC Added {sender_id} ({self.peers[sender_id]['ip']})")
+                self.logger.info(f"[SYNC] Added {sender_id} ({self.peers[sender_id]['ip']})")
             else:
                 self.peers[sender_id]["last_seen"] = now_s
                 self.peers[sender_id]["status"] = "active"
@@ -206,8 +201,24 @@ class PeerNode:
                     t0 = self.ping_out[sender_id]["t_ms"]
                     rtt = _now_ms() - t0
                     self.rtts_ms.append(rtt)
-                    self.logger.info(f"PING RTT={rtt}ms to {sender_id}")
+                    self.logger.info(f"[PING] RTT={rtt}ms to {sender_id}")
                     del self.ping_out[sender_id]
+
+    # ---------- Peer table dumps ----------
+    def dump_peers_sample_style(self):
+        with self.lock:
+            obj = self.peers
+            txt = 'peers = ' + json.dumps(obj, indent=3, separators=(',',':'))
+        return txt
+
+    def write_peers_snapshot(self, path=None):
+        if path is None:
+            path = f"logs/peers_snapshot_{self.id}.txt"
+        with self.lock:
+            obj = self.peers
+            txt = 'peers = ' + json.dumps(obj, indent=3, separators=(',',':'))
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(txt + "\n")
 
     # ---------- Thread Tasks ----------
     def listener(self):
@@ -251,14 +262,14 @@ class PeerNode:
                     if (_now_ms() - rec["t_ms"]) / 1000.0 > PING_TIMEOUT:
                         to_remove_out.append(pid)
                 for pid in to_remove_out:
-                    self.logger.info(f"TIMEOUT No PONG from {pid} within {PING_TIMEOUT}s")
+                    self.logger.info(f"[TIMEOUT] No PONG from {pid} within {PING_TIMEOUT}s")
                     del self.ping_out[pid]
 
             cutoff = int(time.time()) - REMOVE_TIMEOUT
             with self.lock:
                 dead = [pid for pid, info in self.peers.items() if info["last_seen"] < cutoff]
                 for pid in dead:
-                    self.logger.info(f"DROP {pid} removed (timeout)")
+                    self.logger.info(f"[DROP] {pid} removed (timeout)")
                     self.peers.pop(pid, None)
 
             time.sleep(0.2)
@@ -267,10 +278,9 @@ class PeerNode:
         while self.running:
             with self.lock:
                 n = len(self.peers)
-                reliability = (self.recv / self.sent) if self.sent > 0 else 0.0
-                mean_rtt = (sum(self.rtts_ms) / len(self.rtts_ms)) if self.rtts_ms else 0.0
-            self.logger.info(f"TABLE {n} active | R={reliability:.2f} | mean RTT={mean_rtt:.1f}ms")
-            time.sleep(5)
+            self.logger.info(f"[TABLE] {n} active peers")
+            pass  # peer table not logged; snapshot written on stop
+            time.sleep(10)
 
     # ---------- Control ----------
     def start(self):
@@ -299,6 +309,8 @@ class PeerNode:
         for t in self._threads:
             if t.is_alive():
                 t.join(timeout=0.5)
+        # Write a final snapshot file on exit
+        self.write_peers_snapshot()
         self.logger.info("STOP Node stopped cleanly")
 
 

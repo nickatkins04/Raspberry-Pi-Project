@@ -1,12 +1,6 @@
-2025-11-03 11:17:39,364 [INFO] INIT Node pi1 at 10.129.133.30:5000
-2025-11-03 11:17:39,364 [INFO] TABLE 0 active | R=0.00 | mean RTT=0.0ms
-2025-11-03 11:17:39,365 [INFO] START Threads: listener, broadcaster, heartbeat, summary
-2025-11-03 11:17:44,370 [INFO] TABLE 0 active | R=0.00 | mean RTT=0.0ms
-2025-11-03 11:17:49,376 [INFO] TABLE 0 active | R=0.00 | mean RTT=0.0ms
-2025-11-03 11:17:54,382 [INFO] TABLE 0 active | R=0.00 | mean RTT=0.0ms
-2025-11-03 11:17:59,385 [INFO] TABLE 0 active | R=0.00 | mean RTT=0.0ms
-2025-11-03 11:18:04,391 [INFO] TABLE 0 active | R=0.00 | mean RTT=0.0ms
-2025-11-03 11:18:09,393 [INFO] TABLE 0 active | R=0.00 | mean RTT=0.0ms
-2025-11-03 11:18:14,398 [INFO] TABLE 0 active | R=0.00 | mean RTT=0.0ms
-2025-11-03 11:18:19,403 [INFO] TABLE 0 active | R=0.00 | mean RTT=0.0ms
-2025-11-03 11:18:20,625 [INFO] STOP Node stopped cleanly
+2025-11-03 13:12:41,927 [INFO] | INIT Node pi1 at 10.100.131.168:5000
+2025-11-03 13:12:41,927 [INFO] | [TABLE] 0 active peers
+2025-11-03 13:12:41,927 [INFO] | START Threads: listener, broadcaster, heartbeat, summary
+2025-11-03 13:12:51,933 [INFO] | [TABLE] 0 active peers
+2025-11-03 13:13:01,939 [INFO] | [TABLE] 0 active peers
+2025-11-03 13:13:05,954 [INFO] | STOP Node stopped cleanly
