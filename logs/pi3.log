@@ -1,0 +1,29 @@
+2025-11-03 11:50:31,701 [INFO] INIT Node pi3 at 10.129.202.9:5000
+2025-11-03 11:50:31,705 [INFO] TABLE 0 active | R=0.00 | mean RTT=0.0ms
+2025-11-03 11:50:31,705 [INFO] START Threads: listener, broadcaster, heartbeat, summary
+2025-11-03 11:50:35,822 [INFO] SYNC Added pi1 (10.129.133.30)
+2025-11-03 11:50:36,720 [INFO] TABLE 1 active | R=1.00 | mean RTT=0.0ms
+2025-11-03 11:50:41,729 [INFO] TABLE 1 active | R=1.00 | mean RTT=0.0ms
+2025-11-03 11:50:45,895 [INFO] SYNC Added pi2 (10.129.207.40)
+2025-11-03 11:50:46,746 [INFO] TABLE 2 active | R=0.80 | mean RTT=0.0ms
+2025-11-03 11:50:46,804 [INFO] PING RTT=11ms to pi2
+2025-11-03 11:50:46,873 [INFO] PING RTT=80ms to pi1
+2025-11-03 11:50:51,757 [INFO] TABLE 2 active | R=0.88 | mean RTT=45.5ms
+2025-11-03 11:50:56,771 [INFO] TABLE 2 active | R=0.89 | mean RTT=45.5ms
+2025-11-03 11:51:01,787 [INFO] TABLE 2 active | R=0.92 | mean RTT=45.5ms
+2025-11-03 11:51:02,309 [INFO] PING RTT=394ms to pi2
+2025-11-03 11:51:04,989 [INFO] TIMEOUT No PONG from pi1 within 3s
+2025-11-03 11:51:05,976 [INFO] STOP Node stopped cleanly
+2025-11-03 14:25:02,027 [INFO] | INIT Node pi3 at 10.129.202.9:5000
+2025-11-03 14:25:02,029 [INFO] | [TABLE] 0 active peers
+2025-11-03 14:25:02,029 [INFO] | START Threads: listener, broadcaster, heartbeat, summary
+2025-11-03 14:25:06,773 [INFO] | [SYNC] Added pi1 (10.129.133.30)
+2025-11-03 14:25:06,877 [INFO] | [SYNC] Added pi2 (10.129.207.40)
+2025-11-03 14:25:12,030 [INFO] | [TABLE] 2 active peers
+2025-11-03 14:25:17,071 [INFO] | [PING] RTT=10ms to pi1
+2025-11-03 14:25:17,150 [INFO] | [PING] RTT=89ms to pi2
+2025-11-03 14:25:22,042 [INFO] | [TABLE] 2 active peers
+2025-11-03 14:25:32,058 [INFO] | [TABLE] 2 active peers
+2025-11-03 14:25:32,133 [INFO] | [PING] RTT=12ms to pi2
+2025-11-03 14:25:35,227 [INFO] | [TIMEOUT] No PONG from pi1 within 3s
+2025-11-03 14:25:37,731 [INFO] | STOP Node stopped cleanly
