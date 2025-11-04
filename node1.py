@@ -31,7 +31,7 @@ import os
 from typing import Tuple
 
 
-# ---------- Global Configuration ----------
+# global config
 PORT = 5000
 BROADCAST_IP = "192.168.0.255"
 SYNC_INTERVAL = 5
@@ -53,22 +53,22 @@ class PeerNode:
         self.port = PORT
         self.seq = 0
         self.sock = None
-        # peers: {peer_id: {"ip": str, "port": int, "last_seen": float, "status": str, "rtt_ms": float}}
+        # setting peer table
         self.peers = {}
         self.running = False
         self.lock = threading.Lock()
 
-        # runtime helpers (no signature changes)
+        # runtime helpers
         self._threads = []
-        self._last_ping = {}  # peer_id -> last ping time
-        self._pending = {}    # (peer_id, seq) -> send_time
+        self._last_ping = {}
+        self._pending = {}  
 
         # logs directory and paths
         os.makedirs("logs", exist_ok=True)
-        self._log_path = None  # set after IP known
+        self._log_path = None
         self._snapshot_path = None
 
-    # ---------- Setup ----------
+    # setting up socket
     def _setup_socket(self):
         """Create and configure UDP socket for broadcast and unicast."""
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -77,13 +77,14 @@ class PeerNode:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         except OSError:
             pass
-        # Optional: allow multiple local processes to bind UDP 5000 for single-machine testing
+
         try:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         except (AttributeError, OSError):
             pass
         sock.bind(("", self.port))
-        sock.settimeout(1.0)  # non-blocking-ish for clean shutdown
+        # set timeout for recv
+        sock.settimeout(1.0)
         self.sock = sock
 
     def _get_local_ip(self):
@@ -100,7 +101,7 @@ class PeerNode:
             ip = socket.gethostbyname(socket.gethostname())
         return ip
 
-    # ---------- Message Handling ----------
+    # packet construction and sending
     def _next_seq(self):
         """Increment and return the next sequence number."""
         self.seq = (self.seq + 1) % (1 << 31)
@@ -121,7 +122,7 @@ class PeerNode:
         except OSError as e:
             self._log("ERROR", f"send failed to {addr}: {e}")
 
-    # ---------- Overlay Operations ----------
+    # setting up message handlers
     def broadcast_sync(self):
         """Broadcast [PEER_SYNC] message to announce presence."""
         body = json.dumps({"ts": time.time()})
@@ -136,7 +137,7 @@ class PeerNode:
         pkt = self._make_packet("PING", body)
         self._send(pkt, (peer_info["ip"], int(peer_info["port"])) )
         self._last_ping[peer_id] = ts
-        self._pending[(peer_id, self.seq)] = ts  # uses seq from _make_packet
+        self._pending[(peer_id, self.seq)] = ts 
         self._log("PING", f"-> {peer_id} ({peer_info['ip']}:{peer_info['port']}) seq={self.seq}")
 
     def send_pong(self, addr: tuple):
@@ -152,9 +153,9 @@ class PeerNode:
             return
         mtype, seq_s, from_id, from_ip, from_port, body = parts
         if from_id == self.id:
-            return  # ignore own packets
+            return
 
-        # ensure peer exists/updated
+        # ensure peer is in table, update last_seen
         now = time.time()
         with self.lock:
             p = self.peers.get(from_id)
@@ -168,7 +169,7 @@ class PeerNode:
                 }
                 self._log("SYNC", f"Added {from_id} ({from_ip})")
             else:
-                # update IP/port if changed; bump last_seen
+                # update IP/port if changed. bump last_seen
                 changed = (p["ip"], p["port"]) != (from_ip, int(from_port))
                 p["ip"], p["port"], p["last_seen"], p["status"] = from_ip, int(from_port), now, "active"
                 if changed:
@@ -182,10 +183,10 @@ class PeerNode:
         seq = int(seq_s)
 
         if mtype == "PEER_SYNC":
-            # nothing else to do; listener already updated table
+            # nothing else to do, listener already updated table
             return
         elif mtype == "PING":
-            # reply with PONG (echo seq implicitly by new seq; RTT measured using ts in payload)
+            # reply with PONG
             self.send_pong(addr)
             return
         elif mtype == "PONG":
@@ -196,7 +197,7 @@ class PeerNode:
                 with self.lock:
                     peer = self.peers.get(from_id)
                     if peer:
-                        # update last-sample RTT (no weighting/smoothing)
+                        # update RTT and last_seen
                         peer["rtt_ms"] = rtt_ms
                         peer["last_seen"] = now
                 self._log("PONG", f"<- {from_id} rtt≈{rtt_ms:.1f} ms")
@@ -204,7 +205,7 @@ class PeerNode:
         else:
             self._log("WARN", f"Unknown type {mtype} from {from_id}")
 
-    # ---------- Thread Tasks ----------
+    # setting up threads
     def listener(self):
         """Continuously listen for incoming packets."""
         while self.running:
@@ -224,7 +225,7 @@ class PeerNode:
         """Periodically broadcast PEER_SYNC messages."""
         while self.running:
             self.broadcast_sync()
-            self._write_snapshot()  # keep peers snapshot fairly fresh
+            self._write_snapshot()
             time.sleep(SYNC_INTERVAL)
 
     def heartbeat(self):
@@ -262,11 +263,11 @@ class PeerNode:
                 rtt_str = f"{rtt:.1f} ms" if rtt is not None else "n/a"
                 lines.append(f"  - {pid} @ {info['ip']}:{info['port']} | last_seen={int(time.time()-info['last_seen'])}s | rtt={rtt_str}")
             self._log("INFO", "\n".join(lines))
-            # snapshot also handled by broadcaster, but this keeps it fresh if no broadcasts
+            # snapshot also handled by broadcaster, this keeps it fresh if no broadcasts
             self._write_snapshot()
             time.sleep(10)
 
-    # ---------- Control ----------
+    # node control
     def start(self):
         """Start listener, broadcaster, heartbeat, and summary threads."""
         if self.running:
@@ -294,9 +295,8 @@ class PeerNode:
         except OSError:
             pass
         self._log("EXIT", "Node stopping")
-        # Threads are daemons; allow them to exit naturally
 
-    # ---------- Helpers (no signature changes to required API) ----------
+    # helpers
     def _write_snapshot(self):
         if not self._snapshot_path:
             return
@@ -329,7 +329,7 @@ class PeerNode:
             pass
 
 
-# ---------- Entry Point ----------
+# main entry point
 if __name__ == "__main__":
     import sys
     if len(sys.argv) < 2:
