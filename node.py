@@ -1,27 +1,4 @@
-"""
-UDP Overlay Networking Implementation
-------------------------------------------------
-Conforms to the provided skeleton and **does not change** any function signatures.
-Students must implement all methods that raise NotImplementedError.
 
-Behavior added (kept inside existing methods only):
-- UDP broadcast discovery via BROADCAST_IP.
-- Heartbeats with PING/PONG and simple RTT tracking.
-- Peer table maintenance with timeouts.
-- Log file per node: logs/<node_id>.log (no peer table in this log).
-- Peer snapshot file per node: logs/<node_id>_peers_snapshot.txt.
-- Log lines use a vertical bar after the tag, e.g., "[INFO] | ..." as requested.
-
-Packet format (plain text):
-    <TYPE>|<SEQ>|<FROM>|<IP>|<PORT>|<BODY>
-Where BODY may contain JSON depending on TYPE.
-
-Thread roles:
-- listener(): receive and dispatch packets
-- broadcaster(): send PEER_SYNC every SYNC_INTERVAL seconds
-- heartbeat(): ping peers every PING_INTERVAL seconds; purge stale peers
-- summary(): periodically write peers snapshot and console summary
-"""
 
 import socket
 import threading
@@ -31,7 +8,7 @@ import os
 from typing import Tuple
 
 
-# global config
+# global  config
 PORT = 5000
 BROADCAST_IP = "192.168.0.255"
 SYNC_INTERVAL = 5
@@ -205,7 +182,7 @@ class PeerNode:
         else:
             self._log("WARN", f"Unknown type {mtype} from {from_id}")
 
-    # setting up threads
+    # set socket to listen like in previous assignemnts
     def listener(self):
         """Continuously listen for incoming packets."""
         while self.running:
@@ -221,14 +198,14 @@ class PeerNode:
                 continue
             self.handle_message(msg, addr)
 
-    def broadcaster(self):
+    def broadcaster(self):      #broadcast hearbeat
         """Periodically broadcast PEER_SYNC messages."""
         while self.running:
             self.broadcast_sync()
             self._write_snapshot()
             time.sleep(SYNC_INTERVAL)
 
-    def heartbeat(self):
+    def heartbeat(self): #check if still there
         """Send pings and remove inactive peers."""
         while self.running:
             now = time.time()
@@ -252,7 +229,7 @@ class PeerNode:
                         self._log("INFO", f"Removed stale peer {pid}")
             time.sleep(1)
 
-    def summary(self):
+    def summary(self):      #set log
         """Print peer-table summary periodically."""
         while self.running:
             with self.lock:
